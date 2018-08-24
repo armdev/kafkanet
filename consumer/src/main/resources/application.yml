@@ -1,0 +1,54 @@
+kafka:
+   bootstrap-servers: kafka:9092
+   topic.request-topic: requesttopic
+   topic.requestreply-topic: replytopic
+   consumergroup: requestreplygorup
+
+
+management:
+  security:  
+    enabled: false   
+  endpoint:
+    health:
+      enabled: true
+      show-details: always
+  endpoints:
+    jmx:
+      exposure:
+       include: '*'
+    web:
+     exposure:
+      include: '*'
+      base-path: /actuator
+    cors:
+      allowed-origins: 'true'
+      enabled-by-default: 'false'
+
+
+server:
+  port: 2036
+  
+spring:
+  application:
+    name: consumer    
+
+  kafka:
+      listener:
+         ack-mode: MANUAL   
+      producer:
+        max:
+         request:
+            size: 231072000      
+        batch-size: 60000000
+        buffer-memory: 60000000      
+      bootstrap-servers: kafka:9092
+      client-id: consumer
+      consumer:
+          group-id: requestreplygorup     
+          auto-offset-reset: earliest         
+          enable-auto-commit: false    
+          
+logging:
+    level:
+        ROOT: #logback.loglevel#
+        io.project: #logback.loglevel#          

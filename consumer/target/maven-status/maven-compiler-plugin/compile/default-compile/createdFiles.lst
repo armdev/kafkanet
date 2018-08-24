@@ -1,0 +1,4 @@
+io\project\services\ReplyingKafkaConsumer.class
+io\project\model\UserRequest.class
+io\project\app\ConsumerApplication.class
+io\project\app\KafkaConfig.class

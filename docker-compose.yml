@@ -1,0 +1,85 @@
+version: '3.2'
+services:
+  zookeeper:
+    image: wurstmeister/zookeeper
+    container_name: zookeeper 
+    ports:
+      - "2181:2181"
+    networks:
+      - kafkanet 
+
+  kafka:
+    image: wurstmeister/kafka:latest
+    container_name: kafka
+    ports:
+      - target: 9094
+        published: 9094
+        protocol: tcp
+        mode: host
+    environment:
+      HOSTNAME_COMMAND: "docker info | grep ^Name: | cut -d' ' -f 2"
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: INSIDE://:9092,OUTSIDE://_{HOSTNAME_COMMAND}:9094
+      KAFKA_LISTENERS: INSIDE://:9092,OUTSIDE://:9094
+      KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
+      KAFKA_PORT: 9092
+      KAFKA_CREATE_TOPICS: "requesttopic:1:1,replytopic:1:1"
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_JMX_PORT: 7071
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock 
+    networks:
+      - kafkanet 
+
+  prometheus:
+     image: prom/prometheus
+     container_name: prometheus
+     networks:
+      - kafkanet
+     ports:
+      - "9090:9090"
+      
+  producer:
+    image: producer
+    build: ./producer
+    container_name: producer
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+    links:
+      - kafka      
+    depends_on:      
+      - kafka     
+    ports:
+      - '2035:2035'    
+    networks:
+      - kafkanet 
+      
+  consumer:
+    image: consumer
+    build: ./consumer
+    container_name: consumer
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+    links:
+      - kafka      
+    depends_on:      
+      - kafka     
+    ports:
+      - '2036:2036'    
+    networks:
+      - kafkanet       
+        
+  
+  
+networks:
+  kafkanet:
+    driver: bridge
